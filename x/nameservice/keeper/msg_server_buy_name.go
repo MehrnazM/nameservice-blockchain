@@ -29,29 +29,29 @@ func (k msgServer) BuyName(goCtx context.Context, msg *types.MsgBuyName) (*types
 		err := k.bankKeeper.SendCoins(ctx, buyer, owner, bid)
 		if err != nil {
 			return nil, err
-		} else {
-			if minPrice.IsAllGT(bid) {
-				// Throw an error
-				return nil, sdkerrors.Wrap(sdkerrors.ErrInsufficientFunds, "Bid is less than min amount")
-			}
-
-			// Otherwise (when the bid is higher), send tokens from the buyer's account to the module's account (as a payment for the name)
-			err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, buyer, types.ModuleName, bid)
-			if err != nil {
-				return nil, err
-			}
 		}
 
-		newWhois := types.Whois{
-			Index: msg.Name,
-			Name:  msg.Name,
-			Value: whois.Value,
-			Price: bid.String(),
-			Owner: buyer.String(),
+	} else {
+		if minPrice.IsAllGT(bid) {
+			// Throw an error
+			return nil, sdkerrors.Wrap(sdkerrors.ErrInsufficientFunds, "Bid is less than min amount")
 		}
 
-		k.SetWhois(ctx, newWhois)
-
+		// Otherwise (when the bid is higher), send tokens from the buyer's account to the module's account (as a payment for the name)
+		err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, buyer, types.ModuleName, bid)
+		if err != nil {
+			return nil, err
+		}
 	}
+
+	newWhois := types.Whois{
+		Index: msg.Name,
+		Name:  msg.Name,
+		Value: whois.Value,
+		Price: bid.String(),
+		Owner: buyer.String(),
+	}
+
+	k.SetWhois(ctx, newWhois)
 	return &types.MsgBuyNameResponse{}, nil
 }
